@@ -1,57 +1,99 @@
-# Campus Glam
+# Beauty Glam
 
-Campus Glam is a marketplace built for University at Buffalo students to discover and offer beauty services on campus.
+Beauty Glam is a marketplace built for students to discover and offer beauty services on campus — hair, nails, lashes, makeup, and more — all in one place instead of scattered across Instagram DMs and word of mouth.
 
-Instead of relying on Instagram, word of mouth, or friends of friends to find someone who does hair, nails, lashes, makeup, or other beauty services, Campus Glam puts everything in one place.
+This repo is a monorepo with two apps:
 
-## About
+- **`client/`** — React + TypeScript frontend (Vite)
+- **`server/`** — Node.js + Express backend (TypeScript), with Postgres via Knex
 
-Campus Glam allows UB students to browse beauty services offered by other students and connect with providers directly through the platform.
+## Prerequisites
 
-Students can also become providers themselves by creating listings for the services they offer.
+- [Node.js](https://nodejs.org/) 18+ and npm
+- [PostgreSQL](https://www.postgresql.org/) running locally (or a connection string to a remote instance)
 
-## Features
+## Local setup
 
-- Browse beauty services offered by UB students
-- Create service listings
-- Discover providers in one centralized marketplace
-- View service information and pricing
-- Leave reviews for providers
-- Find services including:
-  - Hair
-  - Nails
-  - Lashes
-  - Makeup
-  - Eyebrows
-  - Skincare
-  - Other beauty services
+### 1. Clone and install dependencies
 
-## Why Campus Glam?
+```bash
+git clone <this-repo-url>
+cd beauty-glam
 
-Finding beauty services on campus can be difficult because many student providers mainly advertise through Instagram, Snapchat, or word of mouth.
+cd client && npm install
+cd ../server && npm install
+```
 
-Campus Glam makes the process easier by creating one dedicated marketplace where UB students can discover local beauty providers without needing to already know someone or search through multiple social media platforms.
+### 2. Configure environment variables
 
-## Who Can Use It?
+Each app has its own `.env.example`. Copy them to `.env` and fill in real values:
 
-Campus Glam is designed specifically for students at the University at Buffalo.
+```bash
+# from client/
+cp .env.example .env
 
-Students can use the platform as customers looking for beauty services or as providers looking to advertise their own services.
+# from server/
+cp .env.example .env
+```
 
-## Marketplace
+- `client/.env` — sets `VITE_API_BASE_URL`, the URL the frontend uses to reach the backend (defaults to `http://localhost:4000`).
+- `server/.env` — sets `PORT` (defaults to `4000`) and `DATABASE_URL` (your local Postgres connection string).
 
-Providers can create listings for the beauty services they offer.
+### 3. Create the database
 
-Listings can help students compare different services, providers, prices, and reviews before deciding who they want to contact.
+Create a Postgres database matching the one in your `server/.env` `DATABASE_URL` (default name: `beauty_glam`):
 
-## Reviews
+```bash
+createdb beauty_glam
+```
 
-Customers can leave reviews after using a provider's service, helping other students make more informed decisions when browsing the marketplace.
+No tables exist yet — migrations will be added as features are built. Run `npm run migrate` from `server/` whenever new migrations are added.
 
-## Goal
+### 4. Run the backend
 
-The goal of Campus Glam is to make beauty services on campus easier to discover while also giving student beauty providers a dedicated place to promote their work and reach more customers.
+```bash
+cd server
+npm run dev
+```
 
-## Status
+This starts the Express server at `http://localhost:4000`. Visit `http://localhost:4000/health` — you should see a JSON response like `{"status":"ok","timestamp":"..."}`.
 
-Campus Glam is currently in development.
+### 5. Run the frontend
+
+In a separate terminal:
+
+```bash
+cd client
+npm run dev
+```
+
+This starts the Vite dev server (usually `http://localhost:5173`). Open it in your browser — the homepage calls the backend's `/health` endpoint and displays the result, confirming the two apps are connected.
+
+## Linting and formatting
+
+Both `client/` and `server/` have ESLint + Prettier configured:
+
+```bash
+npm run lint    # check for lint errors
+npm run format  # auto-format with Prettier
+```
+
+## Project structure
+
+```
+beauty-glam/
+├── client/               # React + TypeScript frontend (Vite)
+│   └── src/
+│       ├── api/          # Functions that call the backend
+│       ├── components/   # Reusable UI pieces
+│       ├── pages/        # Top-level page components
+│       └── types/        # Shared TypeScript types
+├── server/               # Express + TypeScript backend
+│   ├── migrations/       # Knex database migrations
+│   └── src/
+│       ├── routes/       # Express route definitions
+│       ├── controllers/  # Request handler logic
+│       ├── middleware/   # Express middleware (error handling, etc.)
+│       └── db/           # Database connection setup
+└── README.md
+```
