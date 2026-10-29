@@ -17,3 +17,4 @@ server/dist/
 # Editor/OS
 .DS_Store
 .vscode/
+*.session.sql
