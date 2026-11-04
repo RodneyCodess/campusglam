@@ -1,7 +1,9 @@
 import "dotenv/config";
+import { clerkMiddleware } from "@clerk/express";
 import cors from "cors";
 import express from "express";
 import { healthRouter } from "./routes/health";
+import { usersRouter } from "./routes/users";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 
@@ -10,8 +12,10 @@ const port = process.env.PORT ?? 4000;
 
 app.use(cors());
 app.use(express.json());
+app.use(clerkMiddleware());
 
 app.use(healthRouter);
+app.use(usersRouter);
 
 app.use(notFound);
 app.use(errorHandler);
