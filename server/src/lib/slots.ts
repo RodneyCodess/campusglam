@@ -27,6 +27,15 @@ export interface Slot {
   end_at: string;
 }
 
+// An exact moment as an ISO string in New York time with its offset, e.g.
+// "2026-11-16T10:00:00-05:00" (EST) or "2027-07-01T10:00:00-04:00" (EDT).
+// Used for every start_at/end_at the API returns.
+export function toNewYorkISO(moment: Date | DateTime): string {
+  const dateTime =
+    moment instanceof Date ? DateTime.fromJSDate(moment) : moment;
+  return dateTime.setZone(TIME_ZONE).toISO({ suppressMilliseconds: true })!;
+}
+
 // "14:30" -> 870 (minutes after midnight). "24:00" -> 1440.
 export function toMinutes(time: string): number {
   const [hours, minutes] = time.split(":").map(Number);
@@ -37,6 +46,18 @@ export function toMinutes(time: string): number {
 // Nov 6 in UTC, but this still returns Nov 5.
 export function todayInNewYork(now: DateTime = DateTime.now()): DateTime {
   return now.setZone(TIME_ZONE).startOf("day");
+}
+
+// Whether a New York date (midnight) is between today and today +
+// BOOKING_WINDOW_DAYS. Shared by the slots endpoint and booking.
+export function bookingWindow(now: DateTime = DateTime.now()) {
+  const firstDay = todayInNewYork(now);
+  const lastDay = firstDay.plus({ days: BOOKING_WINDOW_DAYS });
+  return {
+    firstDay,
+    lastDay,
+    contains: (day: DateTime) => day >= firstDay && day <= lastDay,
+  };
 }
 
 // Luxon weekday is 1 = Monday ... 7 = Sunday; ours is 0 = Sunday ... 6.
@@ -131,8 +152,8 @@ export function computeSlots({
       slots.push({
         start_time: startAt.toFormat("HH:mm"),
         label: startAt.toFormat("h:mm a"),
-        start_at: startAt.toISO({ suppressMilliseconds: true })!,
-        end_at: endAt.toISO({ suppressMilliseconds: true })!,
+        start_at: toNewYorkISO(startAt),
+        end_at: toNewYorkISO(endAt),
       });
     }
   }

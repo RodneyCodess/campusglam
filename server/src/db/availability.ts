@@ -1,3 +1,4 @@
+import { SLOT_HOLDING_STATUSES } from "../lib/appointmentStatus";
 import type { AvailabilityBlockInput } from "../validation/availability";
 import { db } from "./knex";
 
@@ -69,7 +70,7 @@ export function findBusyIntervals(
 ): Promise<Array<{ start: Date; end: Date }>> {
   return db("appointments")
     .where({ provider_id: providerId })
-    .whereIn("status", ["requested", "confirmed"])
+    .whereIn("status", SLOT_HOLDING_STATUSES)
     .where("start_at", "<", to)
     .where("end_at", ">", from)
     .select("start_at as start", "end_at as end");
