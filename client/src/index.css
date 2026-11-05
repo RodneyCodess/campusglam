@@ -1,11 +1,25 @@
+/* Brand tokens. Clerk's copies of these live in src/clerkAppearance.ts. */
 :root {
   --bg: #faf8f5;
+  --surface: #ffffff;
   --text: #121212;
+  --text-muted: #4a4a4a;
+  --border: #e4dfd6;
+  /* Gold is only for the one main action on a screen. */
   --accent: #c5a059;
+  --accent-hover: #b8924c;
   --error: crimson;
+  --radius: 0.5rem;
   --bottom-tabs-height: 3.5rem;
 
-  font-family: system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans:
+    "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   color-scheme: light;
   background: var(--bg);
   color: var(--text);
@@ -18,6 +32,12 @@ body {
 
 a {
   color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
 }
 
 .page {
@@ -37,7 +57,187 @@ a {
   text-align: center;
 }
 
-/* Layout: top bar */
+/* Shared pieces */
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-decoration: none;
+}
+
+.button-primary {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button-primary:hover {
+  background: var(--accent-hover);
+}
+
+/* A calm, clearly visible message (e.g. the @buffalo.edu notice). */
+.notice {
+  width: 100%;
+  max-width: 25rem;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text);
+  border-radius: var(--radius);
+}
+
+/* Sign-in and sign-up pages */
+.auth-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 2rem 1rem;
+}
+
+.auth-tagline {
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.auth-legal {
+  margin: 0;
+  max-width: 25rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Landing page */
+.landing {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.landing-header {
+  padding: 1.25rem 0;
+}
+
+.hero {
+  padding: 2.5rem 0 3rem;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin: 0 0 1rem;
+}
+
+.hero-text {
+  max-width: 36rem;
+  margin: 0 0 1.75rem;
+  font-size: 1.125rem;
+  color: var(--text-muted);
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.how-it-works {
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.how-it-works h2 {
+  font-size: 1.25rem;
+  margin: 0 0 1.5rem;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.step {
+  display: flex;
+  gap: 1rem;
+}
+
+/* A plain outlined circle with the step number. */
+.step-number {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+.step h3 {
+  font-size: 1rem;
+  margin: 0.25rem 0;
+}
+
+.step p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.providers-line {
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.providers-line p {
+  margin: 0;
+}
+
+.site-footer {
+  padding: 1.5rem 0 2rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.legal-page h1 {
+  margin-top: 1.5rem;
+}
+
+/* Wider screens: more room, steps side by side. */
+@media (min-width: 768px) {
+  .landing {
+    padding: 0 2rem;
+  }
+
+  .hero {
+    padding: 5rem 0 4rem;
+  }
+
+  .hero-title {
+    font-size: 3.5rem;
+  }
+
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Layout: top bar (signed-in pages) */
 .top-bar {
   display: flex;
   align-items: center;
@@ -47,7 +247,9 @@ a {
 }
 
 .logo {
-  font-weight: bold;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
   text-decoration: none;
 }
 
@@ -99,7 +301,7 @@ a {
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
   }
 
   /* Keep page content from hiding behind the tab bar. */
