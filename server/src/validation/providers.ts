@@ -1,15 +1,10 @@
 import { z } from "zod";
-
-// Optional text: trims spaces, and treats "" as "clear this field" (null).
-function optionalText(max: number, label: string) {
-  return z
-    .string(`${label} must be text`)
-    .trim()
-    .max(max, `${label} must be ${max} characters or fewer`)
-    .transform((value) => (value === "" ? null : value))
-    .nullable()
-    .optional();
-}
+import {
+  hasAtLeastOneField,
+  idParamSchema,
+  optionalText,
+  paginationFields,
+} from "./common";
 
 // The only fields a provider can set. strictObject rejects anything else
 // (id, user_id, verification_status, ...) with a 400.
@@ -51,23 +46,13 @@ export const createProviderSchema = z.strictObject(editableFields);
 export const updateProviderSchema = z
   .strictObject(editableFields)
   .partial()
-  .refine((body) => Object.keys(body).length > 0, "Send at least one field");
+  .refine(hasAtLeastOneField, "Send at least one field");
 
-// :id in /api/providers/:id must be a whole number that fits a Postgres integer.
-export const providerIdSchema = z
-  .string()
-  .regex(/^\d+$/, "Provider id must be a positive whole number")
-  .transform(Number)
-  .refine(
-    (id) => id >= 1 && id <= 2147483647,
-    "Provider id must be a positive whole number",
-  );
+// :id in /api/providers/:id
+export const providerIdSchema = idParamSchema("Provider");
 
 // ?limit=&offset= for GET /api/providers.
-export const listProvidersQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
-});
+export const listProvidersQuerySchema = z.object(paginationFields);
 
 export type CreateProviderInput = z.infer<typeof createProviderSchema>;
 export type UpdateProviderInput = z.infer<typeof updateProviderSchema>;
