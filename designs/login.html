@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Glam — Sign up / Log in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================
+   DESIGN TOKENS (colors + fonts) — reuse on other screens
+   ========================================================= */
+:root {
+  --ink:          #0E0D0B; /* phone background, button text */
+  --black:        #000000; /* desktop background */
+  --surface:      #1A1814; /* inputs, code boxes */
+  --line:         #2E2A22; /* borders */
+  --gold:         #C9A45C; /* main button, links, focus, divider */
+  --gold-pressed: #A88848; /* loading / pressed button */
+  --champagne:    #E3C98E; /* italic heading highlight */
+  --ivory:        #F5F1E8; /* primary text */
+  --stone:        #A39C8E; /* secondary + helper text */
+  --placeholder:  #6E685D; /* input placeholder */
+  --error:        #F08A7E; /* error text + border */
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ink); color: var(--ivory); font-family: var(--font-body); }
+a { color: var(--gold); text-decoration: none; }
+a:hover { color: var(--champagne); }
+
+/* =========================================================
+   SCREEN LAYOUT
+   Mobile: 390px wide, near-black. Desktop (≥ 900px): pure black, bigger heading.
+   ========================================================= */
+.screen {
+  min-height: 100vh;
+  padding: 64px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;   /* everything centered vertically */
+  align-items: center;       /* and horizontally */
+  text-align: center;
+  background: var(--ink);
+}
+.stack { width: 100%; max-width: 334px; display: flex; flex-direction: column; align-items: center; gap: 40px; }
+
+/* Heading block */
+.intro { display: flex; flex-direction: column; gap: 14px; }
+.title { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 31px; line-height: 1.08; white-space: nowrap; }
+.title em { font-style: italic; color: var(--champagne); }
+.title--code { font-size: 40px; }
+.subtitle { margin: 0; font-size: 16px; line-height: 1.5; color: var(--stone); }
+.subtitle strong { font-weight: 400; color: var(--ivory); }
+
+/* Thin gold divider */
+.divider { width: 48px; height: 1px; background: var(--gold); opacity: .6; border: 0; margin: 0; }
+
+/* Form */
+.form { width: 100%; display: flex; flex-direction: column; gap: 24px; }
+.field { display: flex; flex-direction: column; gap: 10px; }
+.label { font-size: 14px; font-weight: 500; }
+.input {
+  height: 56px; width: 100%; padding: 0 18px;
+  border-radius: 14px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ivory);
+  font: 17px var(--font-body); text-align: center;
+}
+.input::placeholder { color: var(--placeholder); }
+.input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,164,92,.14); }
+.helper { margin: 0; font-size: 14px; color: var(--stone); }
+
+/* Error state */
+.input--error { border: 1.5px solid var(--error); }
+.error { display: flex; gap: 10px; align-items: flex-start; justify-content: center; margin: 0; font-size: 14px; line-height: 1.45; color: var(--error); }
+.error-icon { flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; background: var(--error); color: var(--ink); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+
+/* Main button */
+.btn {
+  height: 58px; width: 100%; border: 0; border-radius: 16px;
+  background: var(--gold); color: var(--ink);
+  font: 600 17px var(--font-body);
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  cursor: pointer;
+}
+.btn:active { background: var(--gold-pressed); }
+
+/* Loading state */
+.btn--loading { background: var(--gold-pressed); cursor: default; }
+.spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(14,13,11,.25); border-top-color: var(--ink); border-right-color: var(--ink); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 6-digit code */
+.code-group { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.code { display: flex; gap: 8px; }
+.code input {
+  width: 48px; height: 60px; padding: 0;
+  border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ivory);
+  font: 500 24px var(--font-body); text-align: center;
+}
+.code input:focus { outline: none; border: 1.5px solid var(--gold); box-shadow: 0 0 0 4px rgba(201,164,92,.14); }
+.resend { margin: 0; font-size: 15px; color: var(--stone); }
+.resend a { font-weight: 500; padding: 12px 4px; }
+
+/* Desktop overrides */
+@media (min-width: 900px) {
+  .screen { background: var(--black); padding: 56px; }
+  .stack { max-width: none; gap: 44px; }
+  .intro { gap: 18px; }
+  .title, .title--code { font-size: 84px; line-height: 1; }
+  .subtitle { font-size: 19px; }
+  .form { width: 400px; }
+  .code { gap: 12px; }
+  .code input { width: 56px; height: 68px; font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     SCREEN 1 — ENTER EMAIL (sign up + log in)
+     ========================================================= -->
+<main class="screen" id="screen-enter-email">
+  <div class="stack">
+    <!-- Heading -->
+    <div class="intro">
+      <h1 class="title">Welcome to <em>Campus Glam</em></h1>
+      <p class="subtitle">Book lashes, hair and nails from UB students.</p>
+    </div>
+    <hr class="divider">
+    <!-- Email form -->
+    <form class="form">
+      <div class="field">
+        <label class="label" for="email-1">Email</label>
+        <input class="input" id="email-1" type="email" placeholder="yourname@buffalo.edu" autocomplete="email">
+        <p class="helper">Use your @buffalo.edu email.</p>
+      </div>
+      <button class="btn" type="submit">Continue</button>
+    </form>
+  </div>
+</main>
+<!-- END SCREEN 1 — ENTER EMAIL -->
+
+
+<!-- =========================================================
+     SCREEN 2 — ERROR: NON-UB EMAIL
+     ========================================================= -->
+<main class="screen" id="screen-email-error">
+  <div class="stack">
+    <!-- Heading -->
+    <div class="intro">
+      <h1 class="title">Welcome to <em>Campus Glam</em></h1>
+      <p class="subtitle">Book lashes, hair and nails from UB students.</p>
+    </div>
+    <hr class="divider">
+    <!-- Email form with error -->
+    <form class="form">
+      <div class="field">
+        <label class="label" for="email-2">Email</label>
+        <input class="input input--error" id="email-2" type="email" value="jordan.lee@gmail.com" aria-invalid="true" aria-describedby="email-2-error">
+        <!-- Error message -->
+        <p class="error" id="email-2-error" role="alert">
+          <span class="error-icon" aria-hidden="true">!</span>
+          <span>Campus Glam is for UB students. Please use your @buffalo.edu email.</span>
+        </p>
+      </div>
+      <button class="btn" type="submit">Continue</button>
+    </form>
+  </div>
+</main>
+<!-- END SCREEN 2 — ERROR: NON-UB EMAIL -->
+
+
+<!-- =========================================================
+     SCREEN 3 — LOADING: SENDING CODE
+     ========================================================= -->
+<main class="screen" id="screen-sending-code">
+  <div class="stack">
+    <!-- Heading -->
+    <div class="intro">
+      <h1 class="title">Welcome to <em>Campus Glam</em></h1>
+      <p class="subtitle">Book lashes, hair and nails from UB students.</p>
+    </div>
+    <hr class="divider">
+    <!-- Email form, button in loading state -->
+    <form class="form">
+      <div class="field">
+        <label class="label" for="email-3">Email</label>
+        <input class="input" id="email-3" type="email" value="jlee42@buffalo.edu" readonly>
+        <p class="helper">Use your @buffalo.edu email.</p>
+      </div>
+      <!-- Loading button -->
+      <button class="btn btn--loading" type="submit" disabled aria-busy="true">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Sending code…</span>
+      </button>
+    </form>
+  </div>
+</main>
+<!-- END SCREEN 3 — LOADING: SENDING CODE -->
+
+
+<!-- =========================================================
+     SCREEN 4 — ENTER 6-DIGIT CODE
+     ========================================================= -->
+<main class="screen" id="screen-enter-code">
+  <div class="stack">
+    <!-- Heading -->
+    <div class="intro">
+      <h1 class="title title--code">Check your email</h1>
+      <p class="subtitle">We sent a 6-digit code to your email<br><strong>jlee42@buffalo.edu</strong></p>
+    </div>
+    <hr class="divider">
+    <!-- Code form -->
+    <form class="form">
+      <div class="code-group">
+        <!-- 6 code boxes -->
+        <div class="code" role="group" aria-label="6-digit code">
+          <input inputmode="numeric" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1">
+          <input inputmode="numeric" maxlength="1" aria-label="Digit 2">
+          <input inputmode="numeric" maxlength="1" aria-label="Digit 3">
+          <input inputmode="numeric" maxlength="1" aria-label="Digit 4">
+          <input inputmode="numeric" maxlength="1" aria-label="Digit 5">
+          <input inputmode="numeric" maxlength="1" aria-label="Digit 6">
+        </div>
+        <!-- Resend link -->
+        <p class="resend">Didn’t get it? <a href="#">Resend code</a></p>
+      </div>
+      <button class="btn" type="submit">Verify</button>
+    </form>
+  </div>
+</main>
+<!-- END SCREEN 4 — ENTER 6-DIGIT CODE -->
+
+</body>
+</html>

@@ -2,6 +2,9 @@ import { ClerkProvider } from '@clerk/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
+// theme.css first: its font @import must lead the CSS bundle, and index.css
+// must come after it so other pages keep their own --error color.
+import './styles/theme.css'
 import './index.css'
 import App from './App.tsx'
 import CurrentUserProvider from './components/CurrentUserProvider.tsx'

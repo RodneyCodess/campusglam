@@ -1,0 +1,157 @@
+/* Layout for the sign-in and sign-up pages. Colors and fonts come from
+   theme.css; the Clerk form itself is styled in clerkAppearance.ts. */
+
+.auth-screen {
+  /* index.css sets --error for the light pages; use the design's error
+     color inside this dark screen only. */
+  --error: #f08a7e;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+  padding: 64px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--font-body);
+  color-scheme: dark;
+}
+
+.auth-stack {
+  width: 100%;
+  max-width: 334px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+/* Heading block */
+.auth-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 31px;
+  line-height: 1.08;
+  white-space: nowrap;
+}
+
+.auth-title em {
+  font-style: italic;
+  color: var(--champagne);
+}
+
+.auth-subtitle {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--stone);
+  text-align: center;
+}
+
+/* Shown when the server rejects a non-UB email (see SignInPage). */
+.auth-error {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--error);
+}
+
+.auth-error-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--error);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-form {
+  width: 100%;
+}
+
+/* Our heading replaces Clerk's on the first step. Later steps (like
+   "Check your email") keep Clerk's heading. */
+.auth-form .cl-signIn-start .cl-header,
+.auth-form .cl-signUp-start .cl-header {
+  display: none;
+}
+
+/* Clerk's card cuts off anything past its edges, and clerkAppearance.ts
+   removes the card's padding. Without this, the "Email address" label and
+   the "Last used" badge get clipped. */
+.auth-form .cl-cardBox,
+.auth-form .cl-card {
+  overflow: visible;
+}
+
+/* Hide field labels and the "Last used" badge visually; the placeholders say
+   the same thing. Screen readers still read them. Taking the row out of the
+   layout also removes the gap Clerk leaves between it and the input. */
+.auth-form .cl-formFieldLabelRow {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Email only: hide the "Continue with Google" button and the "or" line.
+   Google sign-in is still on in the Clerk dashboard; this only hides it. */
+.auth-form .cl-socialButtonsRoot,
+.auth-form .cl-dividerRow {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .auth-screen {
+    background: var(--black);
+    padding: 56px;
+  }
+
+  .auth-stack {
+    max-width: none;
+    gap: 32px;
+  }
+
+  .auth-intro {
+    gap: 18px;
+  }
+
+  .auth-title {
+    font-size: 84px;
+    line-height: 1;
+  }
+
+  .auth-subtitle {
+    font-size: 19px;
+  }
+  .auth-form {
+    width: 400px;
+  }
+}
