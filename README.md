@@ -39,15 +39,37 @@ cp .env.example .env
 - `client/.env` — sets `VITE_API_BASE_URL`, the URL the frontend uses to reach the backend (defaults to `http://localhost:4000`).
 - `server/.env` — sets `PORT` (defaults to `4000`) and `DATABASE_URL` (your local Postgres connection string).
 
-### 3. Create the database
+### 3. Database setup
 
-Create a Postgres database matching the one in your `server/.env` `DATABASE_URL` (default name: `beauty_glam`):
+You need a Postgres database named `beauty_glam`. Pick one option:
+
+**Option A: Postgres installed locally (port 5432).** Create the database with `createdb beauty_glam`. The default `DATABASE_URL` in `server/.env.example` already points to `localhost:5432`.
+
+**Option B: Docker (port 5433).** Run:
 
 ```bash
-createdb beauty_glam
+docker run -d --name campusglam-postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=beauty_glam \
+  -p 5433:5432 \
+  postgres:16
 ```
 
-No tables exist yet — migrations will be added as features are built. Run `npm run migrate` from `server/` whenever new migrations are added.
+If your Postgres runs on any port other than 5432 (including Option B), change `DATABASE_URL` in your own `server/.env`, for example:
+
+```
+DATABASE_URL=postgres://postgres:postgres@localhost:5433/beauty_glam
+```
+
+Then create the tables from `server/`:
+
+```bash
+cd server
+npm install
+npx knex migrate:latest
+```
+
+Run `npx knex migrate:latest` again whenever new migrations are added.
 
 ### 4. Run the backend
 

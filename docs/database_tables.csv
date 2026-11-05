@@ -1,0 +1,66 @@
+Table,Column,Type,Required,Rules,What it's for
+users,id,integer (auto-increment),Yes,Primary key,Unique number for each user
+users,clerk_user_id,text,Yes,Unique,The user's ID in Clerk (e.g. user_2abc...). Links this row to their Clerk login. Clerk handles passwords and email verification
+users,full_name,text,Yes,,The user's name
+users,email,text,Yes,Unique,Must be a school email (e.g. ends in .edu)
+users,campus,text,Yes,Default 'University at Buffalo',Which university the student attends; used to filter the marketplace
+users,is_provider,boolean,Yes,Default false,True if the user has a provider profile. Must stay in sync with provider_profiles
+users,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+,,,,,
+provider_profiles,id,integer (auto-increment),Yes,Primary key,Unique number for each profile
+provider_profiles,user_id,integer,Yes,Points to users.id; unique,The user who owns this profile. Unique = one profile per user
+provider_profiles,business_name,text,No,,"Optional brand name, e.g. 'Nails by Jasmine'"
+provider_profiles,bio,text,No,,Short description written by the provider
+provider_profiles,photo_url,text,No,,Link to the provider's profile picture (stored in S3)
+provider_profiles,instagram_handle,text,No,,Instagram or other social handle
+provider_profiles,verification_status,text,Yes,"Default 'pending'. One of: pending, verified, rejected",Whether the team has approved this provider
+provider_profiles,is_accepting_bookings,boolean,Yes,Default true,False when the provider isn't taking clients right now
+provider_profiles,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+,,,,,
+services,id,integer (auto-increment),Yes,Primary key,Unique number for each service
+services,provider_id,integer,Yes,Points to provider_profiles.id,The provider offering this service
+services,category,text,Yes,"One of: braids, makeup, nails, lashes, haircut, skincare, hair, locs, other",Used for browsing and filters. Matches the prototype's list
+services,title,text,Yes,,"Name of the service, e.g. 'Gel manicure'"
+services,description,text,No,,Details about what's included
+services,price,"decimal (10,2)",Yes,Must be 0 or more,Current price in dollars
+services,duration_min,integer,Yes,Must be more than 0,How long the service takes in minutes. Needed to calculate appointments.end_at
+services,is_active,boolean,Yes,Default true,Lets a provider hide a service without deleting it (deleting would break past appointments)
+services,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+,,,,,
+service_images,id,integer (auto-increment),Yes,Primary key,Unique number for each image
+service_images,service_id,integer,Yes,Points to services.id; delete images if the service is deleted,Which service this photo belongs to
+service_images,image_url,text,Yes,,Link to the photo stored in AWS S3 (never store the image itself in Postgres)
+service_images,display_order,integer,Yes,Default 0,Order the photos appear in; 0 is the cover photo
+service_images,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+,,,,,
+availability,id,integer (auto-increment),Yes,Primary key,Unique number for each time window
+availability,provider_id,integer,Yes,Points to provider_profiles.id,The provider this time window belongs to
+availability,day_of_week,small integer,Yes,"0 to 6, where 0 = Sunday and 6 = Saturday",Which day of the week the window repeats on
+availability,start_time,time,Yes,,"When the window opens, e.g. 10:00"
+availability,end_time,time,Yes,Must be after start_time,"When the window closes, e.g. 14:00"
+availability,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+availability,(table rule),,,,"A provider can have several windows per day, but they can't overlap"
+,,,,,
+appointments,id,integer (auto-increment),Yes,Primary key,Unique number for each appointment
+appointments,client_id,integer,Yes,Points to users.id,The student who booked
+appointments,provider_id,integer,Yes,Points to provider_profiles.id,The provider being booked. Must match the service's provider
+appointments,service_id,integer,Yes,Points to services.id,The service being booked
+appointments,start_at,timestamp,Yes,,Date and time the appointment begins
+appointments,end_at,timestamp,Yes,Must be after start_at,start_at + the service's duration_min
+appointments,status,text,Yes,"Default 'requested'. One of: requested, confirmed, declined, cancelled, completed, no_show",Where the booking stands
+appointments,price,"decimal (10,2)",Yes,Must be 0 or more,"Copied from the service at booking time, so later price changes don't rewrite old bookings"
+appointments,location_type,text,Yes,"One of: provider_place, client_place, campus_spot",Where the service happens
+appointments,location_details,text,No,,"Specifics, e.g. room number or meeting spot"
+appointments,client_notes,text,No,,"Notes for the provider, e.g. 'I have long hair' or allergies"
+appointments,is_paid,boolean,Yes,Default false,Whether the client has paid
+appointments,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+appointments,(table rule),,,,"No two requested or confirmed appointments for the same provider can overlap. Declined, cancelled, and no_show don't block the slot. Enforced with a Postgres exclusion constraint"
+appointments,(table rule),,,,Same rule for the client: no overlapping requested or confirmed appointments
+,,,,,
+reviews,id,integer (auto-increment),Yes,Primary key,Unique number for each review
+reviews,appointment_id,integer,Yes,Points to appointments.id; unique,"The appointment being reviewed. Unique = one review per appointment. Client and provider come from the appointment, so they aren't repeated here"
+reviews,rating,small integer,Yes,Between 1 and 5,Star rating
+reviews,comments,text,No,,Optional written review
+reviews,provider_reply,text,No,,Optional reply from the provider
+reviews,created_at,timestamp,Yes,Default now(),Set automatically when the row is created
+reviews,(table rule),,,,Only appointments with status 'completed' can be reviewed. Checked in the backend
