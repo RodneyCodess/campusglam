@@ -409,3 +409,172 @@ Errors:
 - `400`: invalid id, `service_id` or `date`, or a date outside today to 60 days ahead.
 - `404`: `{ "error": "Provider not found." }`, or `{ "error": "Service not found for this provider." }` when the service is inactive or belongs to someone else.
 - `409`: `{ "error": "This provider isn't accepting bookings right now." }`
+
+---
+
+## Appointments (booking requests)
+
+### Status rules
+
+```
+                 accept (provider, before start)              complete (provider, after end)
+   requested ───────────────────────────────────▶ confirmed ─────────────────────────────▶ completed
+      │  │                                            │
+      │  └── decline (provider, any time) ──▶ declined │
+      │                                               │
+      └──────── cancel (client or provider, before start) ───────▶ cancelled
+```
+
+| Action | From | To | Who | When |
+|---|---|---|---|---|
+| accept | `requested` | `confirmed` | provider | before `start_at` |
+| decline | `requested` | `declined` | provider | any time |
+| cancel | `requested` or `confirmed` | `cancelled` | client or provider | before `start_at` |
+| complete | `confirmed` | `completed` | provider | after `end_at` |
+
+- Any other change returns `409` with a message naming the current status, e.g. `"Only requested appointments can be accepted (this one is confirmed)."`
+- `no_show` exists in the schema but no endpoint sets it yet.
+- `requested` and `confirmed` appointments hold their time slot; the other statuses free it.
+
+Status-change endpoints return `404` `{ "error": "Appointment not found." }` when the appointment isn't yours. That's the same answer as for an appointment that doesn't exist.
+
+### POST /api/appointments
+
+A client requests a booking.
+- **The server sets:** `client_id` (you), `provider_id`, `end_at` (start + the service's duration), `price` (copied from the service now, so later price changes don't affect this booking), and `status` (`requested`). Sending any of these is a `400`.
+- **`start_at`** must be exactly one of the times `GET /api/providers/:id/slots` currently offers for that service. Use a slot's `start_at` value.
+
+Request:
+
+```json
+{
+  "service_id": 3,
+  "start_at": "2026-11-16T10:00:00-05:00",
+  "location_type": "campus_spot",
+  "location_details": "Capen Hall, 2nd floor lounge",
+  "client_notes": "I have long hair."
+}
+```
+
+| Field | Rules |
+|---|---|
+| `service_id` | Required. A whole number. |
+| `start_at` | Required. ISO timestamp with offset or `Z`. |
+| `location_type` | Required. `provider_place`, `client_place` or `campus_spot`. |
+| `location_details` | Optional. Up to 200 characters. |
+| `client_notes` | Optional. Up to 500 characters. |
+
+Response `201`:
+
+```json
+{
+  "id": 21,
+  "client_id": 12,
+  "provider_id": 7,
+  "service_id": 3,
+  "start_at": "2026-11-16T10:00:00-05:00",
+  "end_at": "2026-11-16T11:00:00-05:00",
+  "status": "requested",
+  "price": "25.00",
+  "location_type": "campus_spot",
+  "location_details": "Capen Hall, 2nd floor lounge",
+  "client_notes": "I have long hair.",
+  "is_paid": false,
+  "created_at": "2026-11-05T20:00:00.000Z"
+}
+```
+
+In every appointment response, `start_at` and `end_at` are New York time with the offset, in the same format as the slots endpoint: `-05:00` in winter (EST), `-04:00` in summer (EDT). `created_at` stays in UTC (`Z`).
+
+Errors:
+- `400` invalid body
+- `400` `{ "error": "You can't book your own service." }`
+- `400` `{ "error": "That time isn't available." }` when it isn't an open slot: wrong time, outside hours, already taken, under 2 hours away, or more than 60 days ahead
+- `404` `{ "error": "Service not found." }` (inactive, or the provider is rejected)
+- `409` `{ "error": "This provider isn't accepting bookings right now." }`
+- `409` `{ "error": "That time was just taken. Please pick another slot." }` when someone booked an overlapping time a moment earlier
+- `409` `{ "error": "You already have a booking that overlaps this time." }`
+
+### GET /api/appointments/mine
+
+Your bookings as a client.
+
+Query parameters (all optional):
+
+| Parameter | Rules |
+|---|---|
+| `status` | One status value, e.g. `confirmed`. |
+| `when` | `upcoming` (starts now or later, soonest first) or `past` (already started, most recent first). Without it: all, newest start first. |
+| `limit`, `offset` | Same as other lists (1–50, default 20). |
+
+Example: `GET /api/appointments/mine?when=upcoming`
+
+Response `200`:
+
+```json
+{
+  "appointments": [
+    {
+      "id": 21,
+      "status": "requested",
+      "start_at": "2026-11-16T10:00:00-05:00",
+      "end_at": "2026-11-16T11:00:00-05:00",
+      "price": "25.00",
+      "location_type": "campus_spot",
+      "location_details": "Capen Hall, 2nd floor lounge",
+      "client_notes": "I have long hair.",
+      "created_at": "2026-11-05T20:00:00.000Z",
+      "service": { "id": 3, "title": "Gel manicure", "category": "nails" },
+      "provider": { "id": 7, "full_name": "Jasmine Lee", "business_name": "Nails by Jasmine" }
+    }
+  ],
+  "limit": 20,
+  "offset": 0
+}
+```
+
+Errors: `400` invalid filters.
+
+### GET /api/appointments/incoming (provider only)
+
+The caller's appointments as a provider. It takes the same filters and returns the same shape as `/mine`, but with `client` instead of `provider`. Only the client's name is included, never their email.
+
+```json
+{
+  "appointments": [
+    {
+      "id": 21,
+      "status": "requested",
+      "start_at": "2026-11-16T10:00:00-05:00",
+      "end_at": "2026-11-16T11:00:00-05:00",
+      "price": "25.00",
+      "location_type": "campus_spot",
+      "location_details": "Capen Hall, 2nd floor lounge",
+      "client_notes": "I have long hair.",
+      "created_at": "2026-11-05T20:00:00.000Z",
+      "service": { "id": 3, "title": "Gel manicure", "category": "nails" },
+      "client": { "full_name": "Sam Rivera" }
+    }
+  ],
+  "limit": 20,
+  "offset": 0
+}
+```
+
+### POST /api/appointments/:id/accept (provider only)
+
+### POST /api/appointments/:id/decline (provider only)
+
+### POST /api/appointments/:id/complete (provider only)
+
+### POST /api/appointments/:id/cancel (client or provider)
+
+No request body. Each changes the status according to the table above.
+
+Response `200`: the full updated appointment (same shape as the `POST /api/appointments` response), e.g. with `"status": "confirmed"`.
+
+Errors: `400` invalid id, `404` not your appointment, `409` the change isn't allowed:
+
+```json
+{ "error": "This appointment has already started, so it can't be cancelled." }
+```

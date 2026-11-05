@@ -8,11 +8,10 @@ import {
 } from "../db/availability";
 import { findPublicProviderById } from "../db/providers";
 import {
-  BOOKING_WINDOW_DAYS,
+  bookingWindow,
   computeSlots,
   dayOfWeek,
   TIME_ZONE,
-  todayInNewYork,
 } from "../lib/slots";
 import {
   replaceAvailabilitySchema,
@@ -105,15 +104,14 @@ export async function getProviderSlots(
 
     // "date" is a New York calendar day: midnight in New York, not UTC.
     const now = DateTime.now();
-    const today = todayInNewYork(now);
     const day = DateTime.fromISO(date, { zone: TIME_ZONE }).startOf("day");
-    const lastDay = today.plus({ days: BOOKING_WINDOW_DAYS });
-    if (day < today || day > lastDay) {
+    const window = bookingWindow(now);
+    if (!window.contains(day)) {
       res.status(400).json({
         error: "Invalid request",
         fields: {
           date: [
-            `date must be between ${today.toISODate()} and ${lastDay.toISODate()}`,
+            `date must be between ${window.firstDay.toISODate()} and ${window.lastDay.toISODate()}`,
           ],
         },
         other: [],
