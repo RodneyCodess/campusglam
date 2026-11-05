@@ -1,10 +1,10 @@
 import { SignUp } from "@clerk/react-router";
+import AuthPageLayout from "../components/AuthPageLayout";
 
-// Unstyled for now; styling comes in a later issue.
 export default function SignUpPage() {
   return (
-    <main className="page">
+    <AuthPageLayout>
       <SignUp />
-    </main>
+    </AuthPageLayout>
   );
 }
