@@ -74,7 +74,23 @@ Errors: `400` invalid body, `409` `{ "error": "You already have a provider profi
 
 ### GET /api/providers/me
 
-The signed-in user's own profile (same shape as the `POST` response).
+The signed-in user's own profile: the same shape as the `POST` response, plus `rating_avg` and `review_count` (see [Ratings](#ratings)).
+
+```json
+{
+  "id": 7,
+  "user_id": 12,
+  "business_name": "Nails by Jasmine",
+  "bio": "Gel and acrylic nails in Ellicott.",
+  "photo_url": null,
+  "instagram_handle": "nailsbyjas",
+  "verification_status": "pending",
+  "is_accepting_bookings": true,
+  "created_at": "2026-11-05T18:20:00.000Z",
+  "rating_avg": 4.3,
+  "review_count": 3
+}
+```
 
 Errors: `404` `{ "error": "You don't have a provider profile yet." }`.
 
@@ -109,6 +125,8 @@ Response `200`:
   "verification_status": "pending",
   "is_accepting_bookings": true,
   "created_at": "2026-11-05T18:20:00.000Z",
+  "rating_avg": 4.3,
+  "review_count": 3,
   "services": [
     {
       "id": 3,
@@ -146,7 +164,9 @@ Response `200`:
       "instagram_handle": "nailsbyjas",
       "verification_status": "pending",
       "is_accepting_bookings": true,
-      "created_at": "2026-11-05T18:20:00.000Z"
+      "created_at": "2026-11-05T18:20:00.000Z",
+      "rating_avg": null,
+      "review_count": 0
     }
   ],
   "limit": 20,
@@ -155,6 +175,17 @@ Response `200`:
 ```
 
 Errors: `400` invalid `limit` or `offset`.
+
+### Ratings
+
+`GET /api/providers`, `GET /api/providers/:id` and `GET /api/providers/me` include:
+
+| Field | Meaning |
+|---|---|
+| `rating_avg` | Average of the provider's review ratings, rounded to 1 decimal (e.g. `4.3`). `null` when they have no reviews yet. Show "No reviews yet" rather than 0 stars. |
+| `review_count` | Number of reviews. `0` when none. |
+
+They're computed from `reviews` every time they're read (nothing is stored), in the same query as the provider data.
 
 ---
 
@@ -577,4 +608,100 @@ Errors: `400` invalid id, `404` not your appointment, `409` the change isn't all
 
 ```json
 { "error": "This appointment has already started, so it can't be cancelled." }
+```
+
+---
+
+## Reviews
+
+A client can review an appointment once, after it's `completed`. A review's client and provider come from its appointment.
+
+### POST /api/reviews
+
+Request:
+
+```json
+{ "appointment_id": 21, "rating": 5, "comment": "Super neat and on time." }
+```
+
+| Field | Rules |
+|---|---|
+| `appointment_id` | Required. One of your appointments as the client. |
+| `rating` | Required. A whole number from 1 to 5. |
+| `comment` | Optional. Up to 1000 characters. `""` or `null` means no comment. |
+
+Any other field (e.g. `client_id`) is a `400`.
+
+Response `201`:
+
+```json
+{
+  "id": 4,
+  "appointment_id": 21,
+  "rating": 5,
+  "comment": "Super neat and on time.",
+  "created_at": "2026-11-20T18:00:00.000Z"
+}
+```
+
+Errors:
+- `400` invalid body.
+- `404` `{ "error": "Appointment not found." }` when it doesn't exist or you weren't its client.
+- `409` `{ "error": "You can only review completed appointments (this one is confirmed)." }`
+- `409` `{ "error": "You already reviewed this appointment." }`
+
+### GET /api/providers/:id/reviews
+
+A provider's reviews, newest first, with their rating summary. Same visibility as `GET /api/providers/:id`: rejected providers return `404`. Reviewers are shown as first name + last initial, never with ids or emails.
+
+Query parameters: `limit` (1–50, default 20) and `offset` (default 0).
+
+Response `200`:
+
+```json
+{
+  "rating_avg": 4.3,
+  "review_count": 3,
+  "reviews": [
+    {
+      "id": 4,
+      "rating": 5,
+      "comment": "Super neat and on time.",
+      "created_at": "2026-11-20T18:00:00.000Z",
+      "reviewer_name": "Maya J."
+    }
+  ],
+  "limit": 20,
+  "offset": 0
+}
+```
+
+A provider with no reviews returns `"rating_avg": null, "review_count": 0, "reviews": []`.
+
+Errors: `400` invalid id, `limit` or `offset`; `404` `{ "error": "Provider not found." }`.
+
+### GET /api/reviews/mine
+
+Reviews you've written, newest first. Compare `appointment_id` with your `completed` appointments from `GET /api/appointments/mine?status=completed` to see which still need a review.
+
+Query parameters: `limit` and `offset`, as above.
+
+Response `200`:
+
+```json
+{
+  "reviews": [
+    {
+      "id": 4,
+      "appointment_id": 21,
+      "rating": 5,
+      "comment": "Super neat and on time.",
+      "created_at": "2026-11-20T18:00:00.000Z",
+      "service": { "id": 3, "title": "Gel manicure" },
+      "provider": { "id": 7, "full_name": "Jasmine Lee", "business_name": "Nails by Jasmine" }
+    }
+  ],
+  "limit": 20,
+  "offset": 0
+}
 ```

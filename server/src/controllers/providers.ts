@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import {
   createProviderProfile,
   findActiveServicesByProviderId,
+  findOwnProviderWithRatings,
   findProviderByUserId,
   findPublicProviderById,
   listPublicProviders,
@@ -66,7 +67,7 @@ export async function getMyProvider(
   next: NextFunction,
 ) {
   try {
-    const profile = await findProviderByUserId(req.user!.id);
+    const profile = await findOwnProviderWithRatings(req.user!.id);
     if (!profile) {
       res.status(404).json({ error: NO_PROFILE });
       return;

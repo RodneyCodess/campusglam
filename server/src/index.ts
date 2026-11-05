@@ -6,6 +6,7 @@ import { appointmentsRouter } from "./routes/appointments";
 import { availabilityRouter } from "./routes/availability";
 import { healthRouter } from "./routes/health";
 import { providersRouter } from "./routes/providers";
+import { reviewsRouter } from "./routes/reviews";
 import { servicesRouter } from "./routes/services";
 import { usersRouter } from "./routes/users";
 import { notFound } from "./middleware/notFound";
@@ -24,6 +25,7 @@ app.use(providersRouter);
 app.use(servicesRouter);
 app.use(availabilityRouter);
 app.use(appointmentsRouter);
+app.use(reviewsRouter);
 
 app.use(notFound);
 app.use(errorHandler);
