@@ -127,7 +127,7 @@ Build each feature from the bottom up, and test each layer before moving to the 
 
 If the endpoint isn't ready yet, frontend work can start with hardcoded fake data that matches the agreed API format, then swap in the real call later.
 
-Before building a new endpoint, add it to the shared API doc so everyone knows what it takes in and returns.
+Before building a new endpoint, add it to the shared API doc, [docs/api.md](docs/api.md), so everyone knows what it takes in and returns.
 
 ---
 
