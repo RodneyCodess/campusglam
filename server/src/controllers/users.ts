@@ -73,3 +73,9 @@ export async function syncUser(
     next(err);
   }
 }
+
+// GET /api/users/me
+// requireUser has already loaded the row into req.user.
+export function getMe(req: Request, res: Response) {
+  res.json(req.user);
+}

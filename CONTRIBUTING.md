@@ -131,6 +131,76 @@ Before building a new endpoint, add it to the shared API doc so everyone knows w
 
 ---
 
+## How to protect a route and get the current user
+
+### Server: `requireUser`
+
+Add `requireUser` before your controller. It rejects signed-out requests with `401`, rejects users who haven't finished setup with `403`, and otherwise loads the logged-in user's `users` row into `req.user`.
+
+```ts
+// routes/services.ts
+import { Router } from "express";
+import { createService } from "../controllers/services";
+import { requireUser } from "../middleware/requireUser";
+
+export const servicesRouter = Router();
+
+servicesRouter.post("/api/services", requireUser, createService);
+```
+
+```ts
+// controllers/services.ts
+import type { Request, Response } from "express";
+
+export async function createService(req: Request, res: Response) {
+  // The ! tells TypeScript req.user is set. Only true on routes that use requireUser.
+  const userId = req.user!.id;
+  // ...find the provider_profiles row where user_id = userId, then insert
+  // the service with provider_id = that profile's id
+  res.status(201).json({ userId });
+}
+```
+
+Never take a user ID from the request body or URL to decide who is acting. Always use `req.user.id`.
+
+### Client: `useApi` and `useCurrentUser`
+
+Call the server with `useApi()` from `client/src/hooks/useApi.ts`. It attaches the Clerk session token for you, sends and parses JSON, and on failure throws an `ApiError` (from `client/src/api/client.ts`) with the HTTP `status`. The function it returns never changes between renders, so it's safe to use inside `useEffect`.
+
+```tsx
+import { ApiError } from "../api/client";
+import { useApi } from "../hooks/useApi";
+import { useCurrentUser } from "../hooks/useCurrentUser";
+
+function NewServiceButton() {
+  const api = useApi();
+  const { user, loading } = useCurrentUser();
+
+  if (loading || !user) return null;
+
+  async function handleClick() {
+    try {
+      await api<Service>("/api/services", {
+        method: "POST",
+        body: { category: "braids", title: "Box braids", price: 40, duration_min: 120 },
+      });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        // e.g. show "You need a provider profile first."
+      }
+    }
+  }
+
+  return <button onClick={handleClick}>Add service as {user.full_name}</button>;
+}
+```
+
+If you already have a token (outside a component, for example), call `apiFetch(path, { method, body, token })` from `client/src/api/client.ts` directly.
+
+`useCurrentUser()` returns `{ user, loading, error, refresh }`. Call `refresh()` after changing the user's own row so the app shows the new values.
+
+---
+
 ## Database changes and migrations
 
 All changes to the database's structure (creating tables, adding or removing columns) go through **migrations**. Never change tables by hand in your local database.
