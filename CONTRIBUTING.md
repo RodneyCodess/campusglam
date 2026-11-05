@@ -131,6 +131,32 @@ Before building a new endpoint, add it to the shared API doc so everyone knows w
 
 ---
 
+## How to add a new page
+
+All pages are listed in one place: `client/src/App.tsx`.
+
+1. Create the page component in `client/src/pages/`, e.g. `pages/FavoritesPage.tsx`:
+
+   ```tsx
+   export default function FavoritesPage() {
+     return <h1>Favorites</h1>;
+   }
+   ```
+
+2. Add a `<Route>` for it in `App.tsx`, inside the right group:
+   - **Signed-in pages** go inside the `RequireAuth` → `AppLayout` group. They get the login check and the navbar automatically, so don't add your own.
+   - **Provider-only pages** go inside the `RequireProvider` group as well.
+   - **Public pages** go at the top level, next to `/`.
+
+   ```tsx
+   <Route path="/favorites" element={<FavoritesPage />} />
+   ```
+
+3. For a URL with an ID like `/providers/:id`, read the ID with `const { id } = useParams();` from `react-router`.
+4. Link to it with `<Link to="/favorites">` (not `<a href>`, which reloads the whole app). To add it to the navbar, edit the `links` list in `components/AppLayout.tsx`.
+
+---
+
 ## How to protect a route and get the current user
 
 ### Server: `requireUser`

@@ -1,6 +1,7 @@
-import { ClerkProvider } from '@clerk/react'
+import { ClerkProvider } from '@clerk/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router'
 import './index.css'
 import App from './App.tsx'
 import CurrentUserProvider from './components/CurrentUserProvider.tsx'
@@ -13,12 +14,23 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in client/.env')
 }
 
+// BrowserRouter must wrap ClerkProvider so Clerk can navigate with React
+// Router. CurrentUserProvider goes inside both because it uses each.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <CurrentUserProvider>
-        <App />
-      </CurrentUserProvider>
-    </ClerkProvider>
+    <BrowserRouter>
+      <ClerkProvider
+        publishableKey={PUBLISHABLE_KEY}
+        signInUrl="/sign-in"
+        signUpUrl="/sign-up"
+        signInFallbackRedirectUrl="/browse"
+        signUpFallbackRedirectUrl="/browse"
+        afterSignOutUrl="/"
+      >
+        <CurrentUserProvider>
+          <App />
+        </CurrentUserProvider>
+      </ClerkProvider>
+    </BrowserRouter>
   </StrictMode>,
 )

@@ -1,11 +1,109 @@
 :root {
+  --bg: #faf8f5;
+  --text: #121212;
+  --accent: #c5a059;
+  --error: crimson;
+  --bottom-tabs-height: 3.5rem;
+
   font-family: system-ui, sans-serif;
-  color-scheme: light dark;
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
   margin: 0;
+  background: var(--bg);
+}
+
+a {
+  color: inherit;
+}
+
+.page {
+  padding: 1.5rem 1rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.loading {
+  padding: 1.5rem 1rem;
+  text-align: center;
+}
+
+.error {
+  color: var(--error);
+  padding: 0 1rem;
+  text-align: center;
+}
+
+/* Layout: top bar */
+.top-bar {
   display: flex;
-  justify-content: center;
-  padding: 2rem;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--text);
+}
+
+.logo {
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.top-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.nav-link {
+  text-decoration: none;
+}
+
+/* NavLink adds the "active" class to the link for the current page. */
+.nav-link.active {
+  color: var(--accent);
+}
+
+/* Layout: bottom tab bar, phones only */
+.bottom-tabs {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .top-links {
+    display: none;
+  }
+
+  .bottom-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-tabs-height);
+    background: var(--bg);
+    border-top: 1px solid var(--text);
+  }
+
+  .bottom-tabs .nav-link {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+
+  /* Keep page content from hiding behind the tab bar. */
+  .app-layout {
+    padding-bottom: var(--bottom-tabs-height);
+  }
 }
