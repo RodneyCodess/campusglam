@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@clerk/react-router";
 import { useCallback, useLayoutEffect, useRef } from "react";
 import { apiFetch, type ApiFetchOptions } from "../api/client";
 
