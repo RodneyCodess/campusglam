@@ -4,6 +4,7 @@ import cors from "cors";
 import express from "express";
 import { healthRouter } from "./routes/health";
 import { providersRouter } from "./routes/providers";
+import { servicesRouter } from "./routes/services";
 import { usersRouter } from "./routes/users";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
@@ -18,6 +19,7 @@ app.use(clerkMiddleware());
 app.use(healthRouter);
 app.use(usersRouter);
 app.use(providersRouter);
+app.use(servicesRouter);
 
 app.use(notFound);
 app.use(errorHandler);

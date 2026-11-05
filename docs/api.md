@@ -7,7 +7,7 @@ All endpoints live on the server (`http://localhost:4000` in development) and re
 | Status | Meaning |
 |---|---|
 | `401` | Not signed in. |
-| `403` | Signed in, but the account hasn't been synced yet (`POST /api/users/sync`). |
+| `403` | Signed in, but the account hasn't been synced yet (`POST /api/users/sync`). On provider-only endpoints (marked **provider only**), also: no provider profile. |
 | `400` | The request was invalid. See the error format below. |
 
 **Validation errors (400)** list problems by field. `other` holds problems not tied to a single field, such as unknown fields:
@@ -155,3 +155,144 @@ Response `200`:
 ```
 
 Errors: `400` invalid `limit` or `offset`.
+
+---
+
+## Services
+
+A service is something a provider offers, like "Gel manicure". Endpoints marked **provider only** also use `requireProvider`. If the signed-in user has no provider profile, they get `403` `{ "error": "You need a provider profile to do this. Become a provider first." }`.
+
+**Fields a provider can set** (any other field, including `id` and `provider_id`, is rejected with `400`):
+
+| Field | Type | Rules |
+|---|---|---|
+| `category` | string | Required when creating. One of: `braids`, `makeup`, `nails`, `lashes`, `haircut`, `skincare`, `hair`, `locs`, `other`. |
+| `title` | string | Required when creating. 1–80 characters. |
+| `description` | string or null | Optional. Up to 1000 characters. `""` or `null` clears it. |
+| `price` | number | Required when creating. More than 0, up to 1000, at most 2 decimal places (e.g. `25` or `19.99`). |
+| `duration_min` | integer | Required when creating. Whole minutes, 5–480. |
+| `is_active` | boolean | `PATCH` only. `false` hides the service; `true` brings it back. |
+
+`price` is sent as a number but returned as a string like `"19.99"`, which is how Postgres returns decimals.
+
+### POST /api/services (provider only)
+
+Creates a service for the signed-in provider. The service always belongs to the caller's own provider profile.
+
+Request:
+
+```json
+{
+  "category": "nails",
+  "title": "Gel manicure",
+  "description": "Includes shaping and cuticle care.",
+  "price": 25,
+  "duration_min": 60
+}
+```
+
+Response `201`:
+
+```json
+{
+  "id": 3,
+  "provider_id": 7,
+  "category": "nails",
+  "title": "Gel manicure",
+  "description": "Includes shaping and cuticle care.",
+  "price": "25.00",
+  "duration_min": 60,
+  "is_active": true,
+  "created_at": "2026-11-05T19:00:00.000Z"
+}
+```
+
+Errors: `400` invalid body.
+
+### GET /api/services/mine (provider only)
+
+All of the caller's services, including inactive (deleted) ones, newest first.
+
+Response `200`: an array of services (same shape as the `POST` response).
+
+```json
+[
+  {
+    "id": 3,
+    "provider_id": 7,
+    "category": "nails",
+    "title": "Gel manicure",
+    "description": "Includes shaping and cuticle care.",
+    "price": "25.00",
+    "duration_min": 60,
+    "is_active": false,
+    "created_at": "2026-11-05T19:00:00.000Z"
+  }
+]
+```
+
+### PATCH /api/services/:id (provider only)
+
+Updates one of the caller's own services. Send only the fields to change (at least one). Send `{ "is_active": true }` to reactivate a deleted service.
+
+Request:
+
+```json
+{ "price": 30, "duration_min": 75 }
+```
+
+Response `200`: the full updated service (same shape as the `POST` response).
+
+Errors: `400` invalid id or body, `404` `{ "error": "Service not found." }`. The `404` is returned both when the service doesn't exist and when it belongs to another provider, so nobody can tell which ids exist.
+
+### DELETE /api/services/:id (provider only)
+
+Soft-deletes one of the caller's own services: it sets `is_active` to `false` instead of removing the row, so past appointments that point at it stay intact. Deleting an already-inactive service still succeeds.
+
+Response `200`: the service, now with `"is_active": false`.
+
+Errors: `400` invalid id, `404` `{ "error": "Service not found." }` (same rule as `PATCH`).
+
+### GET /api/services
+
+Services for the browse page, newest first. Only active services, from providers who aren't rejected and are accepting bookings. Never includes emails, `user_id` or `clerk_user_id`.
+
+Query parameters (all optional):
+
+| Parameter | Rules |
+|---|---|
+| `category` | One of the categories above. |
+| `max_price` | Number more than 0. Returns services priced at or below it. |
+| `limit` | 1–50, default 20. |
+| `offset` | Default 0. |
+
+Example: `GET /api/services?category=nails&max_price=40&limit=20`
+
+Response `200`:
+
+```json
+{
+  "services": [
+    {
+      "id": 3,
+      "category": "nails",
+      "title": "Gel manicure",
+      "description": "Includes shaping and cuticle care.",
+      "price": "25.00",
+      "duration_min": 60,
+      "created_at": "2026-11-05T19:00:00.000Z",
+      "provider": {
+        "id": 7,
+        "full_name": "Jasmine Lee",
+        "business_name": "Nails by Jasmine"
+      }
+    }
+  ],
+  "limit": 20,
+  "offset": 0
+}
+```
+
+`provider.id` is the provider profile id, so it can be used with `GET /api/providers/:id`.
+
+Errors: `400` invalid `category`, `max_price`, `limit` or `offset`.
