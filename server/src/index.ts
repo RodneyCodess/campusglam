@@ -2,6 +2,7 @@ import "dotenv/config";
 import { clerkMiddleware } from "@clerk/express";
 import cors from "cors";
 import express from "express";
+import { availabilityRouter } from "./routes/availability";
 import { healthRouter } from "./routes/health";
 import { providersRouter } from "./routes/providers";
 import { servicesRouter } from "./routes/services";
@@ -20,6 +21,7 @@ app.use(healthRouter);
 app.use(usersRouter);
 app.use(providersRouter);
 app.use(servicesRouter);
+app.use(availabilityRouter);
 
 app.use(notFound);
 app.use(errorHandler);

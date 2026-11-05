@@ -296,3 +296,116 @@ Response `200`:
 `provider.id` is the provider profile id, so it can be used with `GET /api/providers/:id`.
 
 Errors: `400` invalid `category`, `max_price`, `limit` or `offset`.
+
+---
+
+## Availability and slots
+
+**Time zone:** CampusGlam runs on New York time (`America/New_York`).
+- **Weekly hours** like `"10:00"` are New York wall-clock times.
+- **Dates** like `2026-11-20` are New York calendar days.
+- **Timestamps** in responses carry their offset: `-05:00` in winter (EST), `-04:00` in summer (EDT).
+
+The server never uses its own time zone for this math.
+
+`day_of_week`: `0` = Sunday, `1` = Monday, … `6` = Saturday.
+
+### PUT /api/availability/mine (provider only)
+
+Replaces the caller's **whole** weekly schedule with the list sent. The old blocks are deleted and the new ones saved in one transaction. Send `{ "blocks": [] }` for "no availability".
+
+Rules for each block:
+- `start_time` is `"HH:MM"` on the hour or half hour, 24-hour clock.
+- `end_time` follows the same format, or `"24:00"` for midnight.
+- Start must be before end.
+
+Blocks on the same day may touch (`10:00–12:00` and `12:00–14:00`) but not overlap. At most 10 blocks per day and 70 in total.
+
+Request:
+
+```json
+{
+  "blocks": [
+    { "day_of_week": 1, "start_time": "10:00", "end_time": "12:00" },
+    { "day_of_week": 1, "start_time": "12:00", "end_time": "14:00" },
+    { "day_of_week": 4, "start_time": "17:00", "end_time": "21:00" }
+  ]
+}
+```
+
+Response `200` (the saved schedule, sorted by day, then start time):
+
+```json
+{
+  "time_zone": "America/New_York",
+  "blocks": [
+    { "id": 11, "day_of_week": 1, "start_time": "10:00", "end_time": "12:00" },
+    { "id": 12, "day_of_week": 1, "start_time": "12:00", "end_time": "14:00" },
+    { "id": 13, "day_of_week": 4, "start_time": "17:00", "end_time": "21:00" }
+  ]
+}
+```
+
+Errors: `400` invalid body. Problems inside a block appear under `fields.blocks`, e.g. `"Overlaps 10:00-12:00 on the same day"`.
+
+### GET /api/availability/mine (provider only)
+
+The caller's weekly schedule, in the same shape as the `PUT` response.
+
+### GET /api/providers/:id/availability
+
+A provider's weekly schedule, in the same shape as above. Same visibility as `GET /api/providers/:id`: rejected providers return `404`.
+
+Errors: `400` invalid id, `404` `{ "error": "Provider not found." }`.
+
+### GET /api/providers/:id/slots?service_id=&date=YYYY-MM-DD
+
+Bookable start times for one service on one New York date.
+
+- **The service:** `service_id` must be an active service belonging to this provider.
+- **The date:** `date` must be from today to 60 days ahead (New York time).
+- **How slots are built:**
+  - Slots start every 30 minutes from the beginning of the day's hours. Touching blocks count as one continuous block.
+  - The whole service (`duration_min`) must fit before the block ends.
+- **What's removed:**
+  - Slots that overlap a `requested` or `confirmed` appointment.
+  - Slots starting less than 2 hours from now.
+- **Daylight saving days:**
+  - On the spring-forward day, the missing 2:00–2:59 AM times are skipped.
+  - On the fall-back day, 1:00–1:59 AM is offered once, as the first (EDT) occurrence.
+
+Example: `GET /api/providers/7/slots?service_id=3&date=2026-11-16`
+
+Response `200`:
+
+```json
+{
+  "date": "2026-11-16",
+  "time_zone": "America/New_York",
+  "service_id": 3,
+  "duration_min": 60,
+  "slots": [
+    {
+      "start_time": "10:00",
+      "label": "10:00 AM",
+      "start_at": "2026-11-16T10:00:00-05:00",
+      "end_at": "2026-11-16T11:00:00-05:00"
+    },
+    {
+      "start_time": "10:30",
+      "label": "10:30 AM",
+      "start_at": "2026-11-16T10:30:00-05:00",
+      "end_at": "2026-11-16T11:30:00-05:00"
+    }
+  ]
+}
+```
+
+Show `label` to users. Send `start_at` back to the server when booking.
+
+`slots` is `[]` when the provider has no hours that day or everything is taken.
+
+Errors:
+- `400`: invalid id, `service_id` or `date`, or a date outside today to 60 days ahead.
+- `404`: `{ "error": "Provider not found." }`, or `{ "error": "Service not found for this provider." }` when the service is inactive or belongs to someone else.
+- `409`: `{ "error": "This provider isn't accepting bookings right now." }`
