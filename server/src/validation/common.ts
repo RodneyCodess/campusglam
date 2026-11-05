@@ -15,7 +15,7 @@ export function optionalText(max: number, label: string) {
 export function idParamSchema(label: string) {
   const message = `${label} id must be a positive whole number`;
   return z
-    .string()
+    .string(`${label} id is required`)
     .regex(/^\d+$/, message)
     .transform(Number)
     .refine((id) => id >= 1 && id <= 2147483647, message);
