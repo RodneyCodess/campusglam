@@ -1,6 +1,13 @@
 /* Layout for the sign-in and sign-up pages. Colors and fonts come from
    theme.css; the Clerk form itself is styled in clerkAppearance.ts. */
 
+/* index.css gives html and body a light background, which shows as a white
+   strip when scrolling past the top or bottom. Darken it on these pages only. */
+html:has(.auth-screen),
+body:has(.auth-screen) {
+  background: var(--ink);
+}
+
 .auth-screen {
   /* index.css sets --error for the light pages; use the design's error
      color inside this dark screen only. */
@@ -34,7 +41,7 @@
 .auth-intro {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 26px;
 }
 
 .auth-title {
@@ -140,7 +147,7 @@
   }
 
   .auth-intro {
-    gap: 18px;
+    gap: 30px;
   }
 
   .auth-title {

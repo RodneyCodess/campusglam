@@ -10,7 +10,7 @@ export default function SignUpPage() {
           <h1 className="auth-title">
             Welcome to <em>Campus Glam</em>
           </h1>
-          <p className="auth-subtitle">Book local. Book UB.</p>
+          <p className="auth-subtitle">Sign up with your @buffalo.edu email.</p>
         </div>
         <div className="auth-form">
           <SignUp appearance={clerkAppearance} />
